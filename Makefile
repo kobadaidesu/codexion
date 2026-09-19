@@ -5,6 +5,7 @@ CFLAGS = -Wall -Wextra -Werror -pthread
 
 SRC =	src/main.c \
 		src/parse.c \
+		src/error.c \
 
 OBJ = $(SRC:.c=.o)
 

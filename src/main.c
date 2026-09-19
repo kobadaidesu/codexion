@@ -3,15 +3,14 @@
 int	main(int argc, char **argv)
 {
 	t_config	config;
+	t_error		err;
 
-	if (parse_args(argc, argv, &config) != 0)
-	{
-		printf("Error\n");
-		return (1);
-	}
-	printf("coders: %d\n", config.coder_count);
-	printf("burnout: %lld\n", config.burnout);
-	printf("compile: %lld\n", config.compile);
-	printf("scheduler: %s\n", argv[8]);
-	return (0);
+	err = parse_args(argc, argv, &config);
+	if (err != SUCCESS)
+		return (print_error(err));
+	printf("coders: %d\n", config.number_of_coders);
+	printf("burnout: %lld\n", config.time_to_burnout);
+	printf("compile: %lld\n", config.time_to_compile);
+	printf("scheduler: %s\n", argv[ARG_SCHEDULER]);
+	return (EXIT_SUCCESS);
 }

@@ -16,78 +16,90 @@ static int	is_number(char *str)
 	return (1);
 }
 
-static int	parse_number(char *str, long long *value)
+static t_error	parse_number(char *str, long long *value)
 {
 	int			i;
 	long long	result;
 
 	if (!is_number(str))
-		return (1);
+		return (ERR_NOT_A_NUMBER);
 	i = 0;
 	result = 0;
 	while (str[i])
 	{
 		result = result * 10 + (str[i] - '0');
-		if (result > 2147483647)
-			return (1);
+		if (result > INT_MAX)
+			return (ERR_OVER_INT_MAX);
 		i++;
 	}
 	*value = result;
-	return (0);
+	return (SUCCESS);
 }
 
-static int	parse_policy(char *str, t_policy *policy)
+static t_error	parse_scheduler(char *str, t_scheduler *scheduler)
 {
 	if (strcmp(str, "fifo") == 0)
-		*policy = FIFO;
+		*scheduler = FIFO;
 	else if (strcmp(str, "edf") == 0)
-		*policy = EDF;
+		*scheduler = EDF;
 	else
-		return (1);
-	return (0);
+		return (ERR_BAD_SCHEDULER);
+	return (SUCCESS);
 }
 
-static int	parse_second(char **argv, t_config *config)
+static t_error	parse_second(char **argv, t_config *config)
 {
 	long long	value;
+	t_error		err;
 
-	if (parse_number(argv[5], &config->refactor))
-		return (1);
-	if (parse_number(argv[6], &value))
-		return (1);
-	config->required = (int)value;
-	if (parse_number(argv[7], &config->cooldown))
-		return (1);
-	if (parse_policy(argv[8], &config->policy))
-		return (1);
-	return (0);
+	err = parse_number(argv[ARG_TIME_TO_REFACTOR],
+			&config->time_to_refactor);
+	if (err != SUCCESS)
+		return (err);
+	err = parse_number(argv[ARG_COMPILES_REQUIRED], &value);
+	if (err != SUCCESS)
+		return (err);
+	config->number_of_compiles_required = (int)value;
+	err = parse_number(argv[ARG_DONGLE_COOLDOWN], &config->dongle_cooldown);
+	if (err != SUCCESS)
+		return (err);
+	return (parse_scheduler(argv[ARG_SCHEDULER], &config->scheduler));
 }
 
-static int	parse_first(char **argv, t_config *config)
+static t_error	parse_first(char **argv, t_config *config)
 {
 	long long	value;
+	t_error		err;
 
-	if (parse_number(argv[1], &value))
-		return (1);
-	config->coder_count = (int)value;
-	if (parse_number(argv[2], &config->burnout))
-		return (1);
-	if (parse_number(argv[3], &config->compile))
-		return (1);
-	if (parse_number(argv[4], &config->debug))
-		return (1);
-	return (0);
+	err = parse_number(argv[ARG_NUMBER_OF_CODERS], &value);
+	if (err != SUCCESS)
+		return (err);
+	config->number_of_coders = (int)value;
+	err = parse_number(argv[ARG_TIME_TO_BURNOUT], &config->time_to_burnout);
+	if (err != SUCCESS)
+		return (err);
+	err = parse_number(argv[ARG_TIME_TO_COMPILE], &config->time_to_compile);
+	if (err != SUCCESS)
+		return (err);
+	err = parse_number(argv[ARG_TIME_TO_DEBUG], &config->time_to_debug);
+	if (err != SUCCESS)
+		return (err);
+	return (SUCCESS);
 }
 
-int	parse_args(int argc, char **argv, t_config *config)
+t_error	parse_args(int argc, char **argv, t_config *config)
 {
+	t_error	err;
+
 	if (argc != 9)
-		return (1);
-	if (parse_first(argv, config))
-		return (1);
-	if (parse_second(argv, config))
-		return (1);
-	if (config->coder_count < 1)
-		return (1);
-	return (0);
+		return (ERR_ARGC);
+	err = parse_first(argv, config);
+	if (err != SUCCESS)
+		return (err);
+	err = parse_second(argv, config);
+	if (err != SUCCESS)
+		return (err);
+	if (config->number_of_coders < 1)
+		return (ERR_CODER_COUNT);
+	return (SUCCESS);
 }
