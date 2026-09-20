@@ -18,6 +18,8 @@ static const char	*error_message(t_error code)
 		return ("memory allocation failed");
 	if (code == ERR_THREAD)
 		return ("thread operation failed");
+	if (code == ERR_MUTEX)
+		return ("mutex operation failed");
 	return ("unknown error");
 }
 

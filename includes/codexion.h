@@ -6,6 +6,7 @@
 # include <string.h>
 # include <limits.h>
 # include <pthread.h>
+# include <unistd.h>
 
 typedef enum e_arg
 {
@@ -28,7 +29,8 @@ typedef enum e_error
 	ERR_BAD_SCHEDULER,
 	ERR_CODER_COUNT,
 	ERR_MALLOC,
-	ERR_THREAD
+	ERR_THREAD,
+	ERR_MUTEX
 }	t_error;
 
 typedef enum e_scheduler
@@ -53,7 +55,9 @@ typedef struct s_sim	t_sim;
 
 typedef struct s_dongle
 {
-	int	id;
+	int				id;
+	int				holder;
+	pthread_mutex_t	lock;
 }	t_dongle;
 
 typedef struct s_coder
@@ -79,5 +83,7 @@ int		print_error(t_error code);
 t_error	init_sim(t_sim *sim, t_config *config);
 void	destroy_sim(t_sim *sim);
 t_error	run_threads(t_sim *sim);
+int		dongle_try_take(t_coder *coder, t_dongle *dongle);
+void	dongle_release(t_coder *coder, t_dongle *dongle);
 
 #endif
