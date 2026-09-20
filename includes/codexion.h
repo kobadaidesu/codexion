@@ -6,6 +6,7 @@
 # include <string.h>
 # include <limits.h>
 
+
 typedef enum e_arg
 {
 	ARG_NUMBER_OF_CODERS = 1,
@@ -18,6 +19,7 @@ typedef enum e_arg
 	ARG_SCHEDULER
 }	t_arg;
 
+
 typedef enum e_error
 {
 	SUCCESS = 0,
@@ -25,8 +27,12 @@ typedef enum e_error
 	ERR_NOT_A_NUMBER,
 	ERR_OVER_INT_MAX,
 	ERR_BAD_SCHEDULER,
-	ERR_CODER_COUNT
+	ERR_CODER_COUNT,
+	ERR_MALLOC
 }	t_error;
+
+
+
 
 typedef enum e_scheduler
 {
@@ -46,7 +52,32 @@ typedef struct s_config
 	t_scheduler	scheduler;
 }	t_config;
 
+typedef struct s_dongle
+{
+	int	id;
+}	t_dongle;
+
+typedef struct s_coder
+{
+	int			id;
+	t_dongle	*left;
+	t_dongle	*right;
+}	t_coder;
+
+typedef struct s_sim
+{
+	t_config	config;
+	t_coder		*coders;
+	t_dongle	*dongles;
+}	t_sim;
+
+
+
 t_error	parse_args(int argc, char **argv, t_config *config);
+t_error	parse_number(char *str, long long *value);
+t_error	parse_scheduler(char *str, t_scheduler *scheduler);
 int		print_error(t_error code);
+t_error	init_sim(t_sim *sim, t_config *config);
+void	destroy_sim(t_sim *sim);
 
 #endif

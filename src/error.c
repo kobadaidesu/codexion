@@ -14,6 +14,8 @@ static const char	*error_message(t_error code)
 		return ("scheduler must be \"fifo\" or \"edf\"");
 	if (code == ERR_CODER_COUNT)
 		return ("number_of_coders must be at least 1");
+	if (code == ERR_MALLOC)
+		return ("memory allocation failed");
 	return ("unknown error");
 }
 
