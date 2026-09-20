@@ -1,18 +1,15 @@
 #include "../includes/codexion.h"
 
-/* STEP 4確認用の一時ルーチン:全員がわざとD1を取り合う */
 static void	*coder_routine(void *arg)
 {
-	t_coder		*coder;
-	t_dongle	*dongle;
+	t_coder	*coder;
 
 	coder = (t_coder *)arg;
-	dongle = &coder->sim->dongles[0];
-	while (!dongle_try_take(coder, dongle))
-		usleep(1000);
-	printf("coder %d took dongle %d\n", coder->id, dongle->id);
-	usleep(10000);
-	dongle_release(coder, dongle);
+	while (coder->compiles < coder->sim->config.number_of_compiles_required)
+	{
+		if (!coder_cycle(coder))
+			break ;
+	}
 	return (NULL);
 }
 

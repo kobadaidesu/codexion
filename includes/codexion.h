@@ -67,6 +67,7 @@ typedef struct s_coder
 	t_sim		*sim;
 	t_dongle	*left;
 	t_dongle	*right;
+	int			compiles;
 }	t_coder;
 
 struct s_sim
@@ -84,6 +85,8 @@ t_error	init_sim(t_sim *sim, t_config *config);
 void	destroy_sim(t_sim *sim);
 t_error	run_threads(t_sim *sim);
 int		dongle_try_take(t_coder *coder, t_dongle *dongle);
+int		dongle_take(t_coder *coder, t_dongle *dongle);
 void	dongle_release(t_coder *coder, t_dongle *dongle);
+int		coder_cycle(t_coder *coder);
 
 #endif

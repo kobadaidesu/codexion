@@ -9,6 +9,7 @@ SRC =	src/main.c \
 		src/init.c \
 		src/thread.c \
 		src/dongle.c \
+		src/coder.c \
 		src/error.c \
 
 OBJ = $(SRC:.c=.o)

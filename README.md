@@ -10,3 +10,6 @@ scheduler
 
 coder はsim の情報を知っておきたいから参照できるように
 コピーじゃなくて参照にするのはmutex関連の話
+
+coffman conditionts
+dongle idの小さい方から大きい方に取得することによってCirculer Waitを解消してdeadlockを防ぐ
