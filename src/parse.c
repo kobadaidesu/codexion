@@ -48,4 +48,3 @@ t_error	parse_scheduler(char *str, t_scheduler *scheduler)
 		return (ERR_BAD_SCHEDULER);
 	return (SUCCESS);
 }
-

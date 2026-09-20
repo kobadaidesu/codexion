@@ -5,7 +5,7 @@
 # include <stdlib.h>
 # include <string.h>
 # include <limits.h>
-
+# include <pthread.h>
 
 typedef enum e_arg
 {
@@ -19,7 +19,6 @@ typedef enum e_arg
 	ARG_SCHEDULER
 }	t_arg;
 
-
 typedef enum e_error
 {
 	SUCCESS = 0,
@@ -28,11 +27,9 @@ typedef enum e_error
 	ERR_OVER_INT_MAX,
 	ERR_BAD_SCHEDULER,
 	ERR_CODER_COUNT,
-	ERR_MALLOC
+	ERR_MALLOC,
+	ERR_THREAD
 }	t_error;
-
-
-
 
 typedef enum e_scheduler
 {
@@ -52,6 +49,8 @@ typedef struct s_config
 	t_scheduler	scheduler;
 }	t_config;
 
+typedef struct s_sim	t_sim;
+
 typedef struct s_dongle
 {
 	int	id;
@@ -60,18 +59,18 @@ typedef struct s_dongle
 typedef struct s_coder
 {
 	int			id;
+	pthread_t	thread;
+	t_sim		*sim;
 	t_dongle	*left;
 	t_dongle	*right;
 }	t_coder;
 
-typedef struct s_sim
+struct s_sim
 {
 	t_config	config;
 	t_coder		*coders;
 	t_dongle	*dongles;
-}	t_sim;
-
-
+};
 
 t_error	parse_args(int argc, char **argv, t_config *config);
 t_error	parse_number(char *str, long long *value);
@@ -79,5 +78,6 @@ t_error	parse_scheduler(char *str, t_scheduler *scheduler);
 int		print_error(t_error code);
 t_error	init_sim(t_sim *sim, t_config *config);
 void	destroy_sim(t_sim *sim);
+t_error	run_threads(t_sim *sim);
 
 #endif

@@ -8,3 +8,5 @@ number_of_compiles_required \
 dongle_cooldown \
 scheduler
 
+coder はsim の情報を知っておきたいから参照できるように
+コピーじゃなくて参照にするのはmutex関連の話

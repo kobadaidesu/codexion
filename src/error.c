@@ -16,6 +16,8 @@ static const char	*error_message(t_error code)
 		return ("number_of_coders must be at least 1");
 	if (code == ERR_MALLOC)
 		return ("memory allocation failed");
+	if (code == ERR_THREAD)
+		return ("thread operation failed");
 	return ("unknown error");
 }
 

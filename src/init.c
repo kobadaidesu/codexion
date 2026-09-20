@@ -22,6 +22,7 @@ static void	init_coders(t_sim *sim)
 	while (i < count)
 	{
 		sim->coders[i].id = i + 1;
+		sim->coders[i].sim = sim;
 		sim->coders[i].left = &sim->dongles[(i + count - 1) % count];
 		sim->coders[i].right = &sim->dongles[i];
 		i++;
