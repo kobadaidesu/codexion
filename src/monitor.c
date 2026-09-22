@@ -8,7 +8,7 @@ static void	wait_monitor_start(t_sim *sim)
 	pthread_mutex_unlock(&sim->state_lock);
 }
 
-static int	find_burned_coder(t_sim *sim, long long now)
+static int	find_burned_locked(t_sim *sim, long long now)
 {
 	long long	deadline;
 	int			i;
@@ -29,6 +29,18 @@ static int	find_burned_coder(t_sim *sim, long long now)
 	return (-1);
 }
 
+/* state_lock取得済み前提。stop設定とburnoutログを不可分にする */
+static void	report_burnout(t_sim *sim, int index)
+{
+	long long	time;
+
+	sim->stop = 1;
+	pthread_mutex_lock(&sim->log_lock);
+	time = get_elapsed_ms(sim);
+	printf("%lld %d burned out\n", time, sim->coders[index].id);
+	pthread_mutex_unlock(&sim->log_lock);
+}
+
 void	*monitor_routine(void *arg)
 {
 	t_sim	*sim;
@@ -44,16 +56,16 @@ void	*monitor_routine(void *arg)
 			pthread_mutex_unlock(&sim->state_lock);
 			break ;
 		}
-		burned = find_burned_coder(sim, get_time_us());
+		burned = find_burned_locked(sim, get_time_us());
 		if (burned >= 0)
 		{
-			sim->stop = 1;
+			report_burnout(sim, burned);
 			pthread_mutex_unlock(&sim->state_lock);
-			log_burnout(sim, burned + 1);
+			wake_all_dongles(sim);
 			break ;
 		}
 		pthread_mutex_unlock(&sim->state_lock);
-		usleep(1000);
+		usleep(500);
 	}
 	return (NULL);
 }

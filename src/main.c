@@ -9,6 +9,8 @@ int	main(int argc, char **argv)
 	err = parse_args(argc, argv, &config);
 	if (err != SUCCESS)
 		return (print_error(err));
+	if (config.number_of_compiles_required == 0)
+		return (EXIT_SUCCESS);
 	err = init_sim(&sim, &config);
 	if (err != SUCCESS)
 		return (print_error(err));

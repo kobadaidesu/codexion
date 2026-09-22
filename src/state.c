@@ -50,7 +50,7 @@ int	begin_compile(t_coder *coder)
 	return (1);
 }
 
-static int	all_compiled(t_sim *sim)
+static int	all_completed_locked(t_sim *sim)
 {
 	int	i;
 
@@ -68,18 +68,19 @@ static int	all_compiled(t_sim *sim)
 int	finish_compile(t_coder *coder)
 {
 	t_sim	*sim;
+	int		finished;
 
 	sim = coder->sim;
+	finished = 0;
 	pthread_mutex_lock(&sim->state_lock);
 	coder->compiles++;
-	if (all_compiled(sim))
-		sim->stop = 1;
-	if (sim->stop)
+	if (all_completed_locked(sim))
 	{
-		pthread_cond_broadcast(&sim->start_cond);
-		pthread_mutex_unlock(&sim->state_lock);
-		return (0);
+		sim->stop = 1;
+		finished = 1;
 	}
 	pthread_mutex_unlock(&sim->state_lock);
-	return (1);
+	if (finished)
+		wake_all_dongles(sim);
+	return (!finished);
 }

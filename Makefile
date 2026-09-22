@@ -9,8 +9,12 @@ SRC =	src/main.c \
 		src/init.c \
 		src/init_sync.c \
 		src/thread.c \
-		src/dongle.c \
+		src/dongle_take.c \
+		src/dongle_release.c \
+		src/heap.c \
+		src/heap_order.c \
 		src/coder.c \
+		src/coder_cycle.c \
 		src/state.c \
 		src/monitor.c \
 		src/time.c \

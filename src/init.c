@@ -1,18 +1,35 @@
 #include "../includes/codexion.h"
 
+static t_error	init_one_dongle(t_dongle *dongle, int id)
+{
+	dongle->id = id;
+	dongle->holder = 0;
+	dongle->ready_at = 0;
+	dongle->next_ticket = 0;
+	dongle->waiters.size = 0;
+	if (pthread_mutex_init(&dongle->lock, NULL) != 0)
+		return (ERR_MUTEX);
+	if (pthread_cond_init(&dongle->cond, NULL) != 0)
+	{
+		pthread_mutex_destroy(&dongle->lock);
+		return (ERR_COND);
+	}
+	return (SUCCESS);
+}
+
 static t_error	init_dongles(t_sim *sim)
 {
-	int	i;
+	int		i;
+	t_error	err;
 
 	i = 0;
 	while (i < sim->config.number_of_coders)
 	{
-		sim->dongles[i].id = i + 1;
-		sim->dongles[i].holder = 0;
-		if (pthread_mutex_init(&sim->dongles[i].lock, NULL) != 0)
+		err = init_one_dongle(&sim->dongles[i], i + 1);
+		if (err != SUCCESS)
 		{
-			destroy_dongle_mutexes(sim, i);
-			return (ERR_MUTEX);
+			destroy_dongle_sync(sim, i);
+			return (err);
 		}
 		i++;
 	}
@@ -68,7 +85,7 @@ t_error	init_sim(t_sim *sim, t_config *config)
 	{
 		err = init_sim_sync(sim);
 		if (err != SUCCESS)
-			destroy_dongle_mutexes(sim, config->number_of_coders);
+			destroy_dongle_sync(sim, config->number_of_coders);
 	}
 	if (err != SUCCESS)
 	{
