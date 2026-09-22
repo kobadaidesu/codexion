@@ -19,7 +19,11 @@ int	dongle_try_take(t_coder *coder, t_dongle *dongle)
 int	dongle_take(t_coder *coder, t_dongle *dongle)
 {
 	while (!dongle_try_take(coder, dongle))
-		usleep(1000);
+	{
+		if (sim_stopped(coder->sim))
+			return (0);
+		usleep(500);
+	}
 	return (1);
 }
 

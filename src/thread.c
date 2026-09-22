@@ -60,6 +60,7 @@ static t_error	stop_before_start(t_sim *sim, int created)
 t_error	run_threads(t_sim *sim)
 {
 	int	i;
+	int	failed;
 
 	i = 0;
 	while (i < sim->config.number_of_coders)
@@ -69,12 +70,13 @@ t_error	run_threads(t_sim *sim)
 			return (stop_before_start(sim, i));
 		i++;
 	}
-	pthread_mutex_lock(&sim->state_lock);
-	sim->start_time = get_time_us();
-	sim->started = 1;
-	pthread_cond_broadcast(&sim->start_cond);
-	pthread_mutex_unlock(&sim->state_lock);
-	if (join_threads(sim, i))
+	if (pthread_create(&sim->monitor, NULL, monitor_routine, sim) != 0)
+		return (stop_before_start(sim, i));
+	start_simulation(sim);
+	failed = join_threads(sim, i);
+	if (pthread_join(sim->monitor, NULL) != 0)
+		failed = 1;
+	if (failed)
 		return (ERR_THREAD);
 	return (SUCCESS);
 }

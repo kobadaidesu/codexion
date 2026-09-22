@@ -31,6 +31,7 @@ static void	init_coders(t_sim *sim)
 		sim->coders[i].id = i + 1;
 		sim->coders[i].sim = sim;
 		sim->coders[i].compiles = 0;
+		sim->coders[i].last_compile_start = 0;
 		sim->coders[i].left = &sim->dongles[(i + count - 1) % count];
 		sim->coders[i].right = &sim->dongles[i];
 		i++;

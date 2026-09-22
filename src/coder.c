@@ -23,35 +23,52 @@ static int	take_pair(t_coder *coder)
 	if (coder->left == coder->right)
 		return (0);
 	order_dongles(coder, &first, &second);
-	dongle_take(coder, first);
+	if (!dongle_take(coder, first))
+		return (0);
 	log_state(coder, "has taken a dongle");
-	dongle_take(coder, second);
+	if (!dongle_take(coder, second))
+	{
+		dongle_release(coder, first);
+		return (0);
+	}
 	log_state(coder, "has taken a dongle");
 	return (1);
 }
 
-static void	compile_code(t_coder *coder)
+static void	release_pair(t_coder *coder)
 {
-	log_state(coder, "is compiling");
-	usleep(coder->sim->config.time_to_compile * 1000);
 	dongle_release(coder, coder->left);
 	dongle_release(coder, coder->right);
-	coder->compiles++;
 }
 
-static void	debug_and_refactor(t_coder *coder)
+static int	debug_and_refactor(t_coder *coder)
 {
 	log_state(coder, "is debugging");
-	usleep(coder->sim->config.time_to_debug * 1000);
+	if (!wait_phase(coder, coder->sim->config.time_to_debug))
+		return (0);
 	log_state(coder, "is refactoring");
-	usleep(coder->sim->config.time_to_refactor * 1000);
+	if (!wait_phase(coder, coder->sim->config.time_to_refactor))
+		return (0);
+	return (1);
 }
 
 int	coder_cycle(t_coder *coder)
 {
 	if (!take_pair(coder))
 		return (0);
-	compile_code(coder);
-	debug_and_refactor(coder);
-	return (1);
+	if (!begin_compile(coder))
+	{
+		release_pair(coder);
+		return (0);
+	}
+	log_state(coder, "is compiling");
+	if (!wait_phase(coder, coder->sim->config.time_to_compile))
+	{
+		release_pair(coder);
+		return (0);
+	}
+	release_pair(coder);
+	if (!finish_compile(coder))
+		return (0);
+	return (debug_and_refactor(coder));
 }

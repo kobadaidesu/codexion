@@ -70,6 +70,7 @@ typedef struct s_coder
 	t_dongle	*left;
 	t_dongle	*right;
 	int			compiles;
+	long long	last_compile_start;
 }	t_coder;
 
 struct s_sim
@@ -77,6 +78,7 @@ struct s_sim
 	t_config		config;
 	t_coder			*coders;
 	t_dongle		*dongles;
+	pthread_t		monitor;
 	long long		start_time;
 	pthread_mutex_t	log_lock;
 	pthread_mutex_t	state_lock;
@@ -98,7 +100,14 @@ void		dongle_release(t_coder *coder, t_dongle *dongle);
 int			coder_cycle(t_coder *coder);
 long long	get_time_us(void);
 long long	get_elapsed_ms(t_sim *sim);
+int			wait_phase(t_coder *coder, long long duration_ms);
 void		log_state(t_coder *coder, char *message);
+void		log_burnout(t_sim *sim, int coder_id);
+void		start_simulation(t_sim *sim);
+int			sim_stopped(t_sim *sim);
+int			begin_compile(t_coder *coder);
+int			finish_compile(t_coder *coder);
+void		*monitor_routine(void *arg);
 t_error		init_sim_sync(t_sim *sim);
 void		destroy_sim_sync(t_sim *sim);
 void		destroy_dongle_mutexes(t_sim *sim, int count);
