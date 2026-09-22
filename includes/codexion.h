@@ -122,7 +122,6 @@ void		heap_remove_coder(t_heap *heap, t_coder *coder,
 void		heap_up(t_heap *heap, int index, t_scheduler scheduler);
 void		heap_down(t_heap *heap, int index, t_scheduler scheduler);
 void		heap_fix(t_heap *heap, int index, t_scheduler scheduler);
-int			take_pair(t_coder *coder);
 int			coder_cycle(t_coder *coder);
 long long	get_time_us(void);
 long long	get_elapsed_ms(t_sim *sim);

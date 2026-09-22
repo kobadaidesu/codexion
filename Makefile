@@ -13,7 +13,6 @@ SRC =	src/main.c \
 		src/heap.c \
 		src/heap_order.c \
 		src/coder.c \
-		src/coder_cycle.c \
 		src/state.c \
 		src/monitor.c \
 		src/time_log.c \
