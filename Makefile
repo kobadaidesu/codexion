@@ -5,7 +5,6 @@ CFLAGS = -Wall -Wextra -Werror -pthread
 
 SRC =	src/main.c \
 		src/parse.c \
-		src/parse_utils.c \
 		src/init.c \
 		src/sync.c \
 		src/thread.c \
