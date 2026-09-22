@@ -19,8 +19,7 @@ static int	find_burned_locked(t_sim *sim, long long now)
 		if (sim->coders[i].compiles
 			< sim->config.number_of_compiles_required)
 		{
-			deadline = sim->coders[i].last_compile_start
-				+ sim->config.time_to_burnout * 1000;
+			deadline = coder_deadline_locked(&sim->coders[i]);
 			if (now >= deadline)
 				return (i);
 		}

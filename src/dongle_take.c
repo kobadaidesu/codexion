@@ -5,8 +5,7 @@ static long long	get_coder_deadline(t_coder *coder)
 	long long	deadline;
 
 	pthread_mutex_lock(&coder->sim->state_lock);
-	deadline = coder->last_compile_start
-		+ coder->sim->config.time_to_burnout * 1000;
+	deadline = coder_deadline_locked(coder);
 	pthread_mutex_unlock(&coder->sim->state_lock);
 	return (deadline);
 }

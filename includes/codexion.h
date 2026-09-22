@@ -125,6 +125,7 @@ void		heap_fix(t_heap *heap, int index, t_scheduler scheduler);
 int			coder_cycle(t_coder *coder);
 long long	get_time_us(void);
 long long	get_elapsed_ms(t_sim *sim);
+long long	coder_deadline_locked(t_coder *coder);
 int			wait_phase(t_coder *coder, long long duration_ms);
 void		log_state(t_coder *coder, char *message);
 void		start_simulation(t_sim *sim);

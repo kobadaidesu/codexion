@@ -38,8 +38,7 @@ int	begin_compile(t_coder *coder)
 	sim = coder->sim;
 	now = get_time_us();
 	pthread_mutex_lock(&sim->state_lock);
-	deadline = coder->last_compile_start
-		+ sim->config.time_to_burnout * 1000;
+	deadline = coder_deadline_locked(coder);
 	if (sim->stop || now >= deadline)
 	{
 		pthread_mutex_unlock(&sim->state_lock);
