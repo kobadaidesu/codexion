@@ -1,5 +1,11 @@
 #include "../includes/codexion.h"
 
+/*
+** time_log.c : 時刻(内部はμs、ログはms)・中断可能な待機・ログ直列化
+** log_stateのlock順: state_lock → log_lock。
+** coder_deadline_lockedはstate_lock取得済み前提。
+*/
+
 long long	get_time_us(void)
 {
 	struct timeval	tv;

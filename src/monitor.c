@@ -1,5 +1,10 @@
 #include "../includes/codexion.h"
 
+/*
+** monitor.c : burnout監視thread(約0.5ms周期、要件は10ms以内の検知)
+** lock順: state_lock → log_lock。dongle->lockはstate解放後にのみ取る。
+*/
+
 static int	find_burned_locked(t_sim *sim, long long now)
 {
 	long long	deadline;

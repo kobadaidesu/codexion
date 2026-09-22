@@ -1,5 +1,10 @@
 #include "../includes/codexion.h"
 
+/*
+** coder.c : coderの1周(取得 → compile → debug → refactor)
+** dongleはIDの小さい方から取得して循環待ちを防ぐ。
+*/
+
 static void	order_dongles(t_coder *coder,
 	t_dongle **first, t_dongle **second)
 {
@@ -47,30 +52,25 @@ static int	take_pair(t_coder *coder)
 	return (1);
 }
 
-static void	release_pair(t_coder *coder)
+static int	run_phase(t_coder *coder, char *state, long long duration_ms)
 {
-	dongle_release(coder, coder->left);
-	dongle_release(coder, coder->right);
+	log_state(coder, state);
+	return (wait_phase(coder, duration_ms));
 }
 
 int	coder_cycle(t_coder *coder)
 {
-	int	compiled;
+	t_config	*cfg;
+	int			ok;
 
+	cfg = &coder->sim->config;
 	if (!take_pair(coder))
 		return (0);
-	compiled = begin_compile(coder);
-	if (compiled)
-	{
-		log_state(coder, "is compiling");
-		compiled = wait_phase(coder, coder->sim->config.time_to_compile);
-	}
+	ok = begin_compile(coder)
+		&& run_phase(coder, "is compiling", cfg->time_to_compile);
 	release_pair(coder);
-	if (!compiled || !finish_compile(coder))
+	if (!ok || !finish_compile(coder))
 		return (0);
-	log_state(coder, "is debugging");
-	if (!wait_phase(coder, coder->sim->config.time_to_debug))
-		return (0);
-	log_state(coder, "is refactoring");
-	return (wait_phase(coder, coder->sim->config.time_to_refactor));
+	return (run_phase(coder, "is debugging", cfg->time_to_debug)
+		&& run_phase(coder, "is refactoring", cfg->time_to_refactor));
 }

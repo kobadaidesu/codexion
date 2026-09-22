@@ -1,5 +1,11 @@
 #include "../includes/codexion.h"
 
+/*
+** dongle_take.c : 要求登録・待機・取得・停止時の要求取消
+** lock順: dongle->lock → state_lock(逆は全コードで禁止)。
+** heap・holder・ticket・ready_atはdongle->lockの中でだけ触る。
+*/
+
 static long long	get_coder_deadline(t_coder *coder)
 {
 	long long	deadline;

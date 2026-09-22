@@ -1,5 +1,11 @@
 #include "../includes/codexion.h"
 
+/*
+** thread.c : thread生成と一斉スタートゲート、join
+** 全threadはwait_startで待ち、start_simulationのbroadcastで同時に開始。
+** create失敗時はstopを立てて起こしてから作成済み分をjoinする。
+*/
+
 int	wait_start(t_sim *sim)
 {
 	int	ready;

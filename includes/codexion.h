@@ -107,34 +107,58 @@ struct s_sim
 	int				stop;
 };
 
+/* parse.c : 引数検証・数値変換 */
 t_error		parse_args(int argc, char **argv, t_config *config);
+
+/* init.c : メモリ確保・coderとdongleの対応付け */
 t_error		init_sim(t_sim *sim, t_config *config);
+
+/* sync.c : mutex/condの生成と破棄・後片付け */
+t_error		init_sim_sync(t_sim *sim);
+void		destroy_dongle_sync(t_sim *sim, int count);
 void		destroy_sim(t_sim *sim);
+
+/* thread.c : thread生成・開始ゲート・join */
 t_error		run_threads(t_sim *sim);
 int			wait_start(t_sim *sim);
+
+/* coder.c : coderの1周(取得→compile→debug→refactor) */
+int			coder_cycle(t_coder *coder);
+
+/* dongle_take.c : heap登録と条件変数待ちによる取得 */
 int			dongle_take(t_coder *coder, t_dongle *dongle);
+
+/* dongle_release.c : 解放・cooldown設定・待機threadの起床 */
 void		dongle_release(t_coder *coder, t_dongle *dongle);
+void		release_pair(t_coder *coder);
 void		wake_all_dongles(t_sim *sim);
+
+/* heap.c : 優先度付きキューの追加・取り出し・削除 */
 void		heap_push(t_heap *heap, t_waiter waiter, t_scheduler scheduler);
 void		heap_pop(t_heap *heap, t_scheduler scheduler);
 t_waiter	*heap_top(t_heap *heap);
 void		heap_remove_coder(t_heap *heap, t_coder *coder,
 				t_scheduler scheduler);
+
+/* heap_order.c : FIFO/EDF比較とヒープの並び直し */
 void		heap_up(t_heap *heap, int index, t_scheduler scheduler);
 void		heap_down(t_heap *heap, int index, t_scheduler scheduler);
 void		heap_fix(t_heap *heap, int index, t_scheduler scheduler);
-int			coder_cycle(t_coder *coder);
+
+/* state.c : state_lockで守る状態遷移(開始・停止・compile記録) */
+void		start_simulation(t_sim *sim);
+int			sim_stopped(t_sim *sim);
+int			begin_compile(t_coder *coder);
+int			finish_compile(t_coder *coder);
+
+/* monitor.c : burnout監視thread */
+void		*monitor_routine(void *arg);
+
+/* time_log.c : 時刻取得・中断可能な待機・ログ直列化・期限計算 */
 long long	get_time_us(void);
 long long	get_elapsed_ms(t_sim *sim);
 long long	coder_deadline_locked(t_coder *coder);
 int			wait_phase(t_coder *coder, long long duration_ms);
 void		log_state(t_coder *coder, char *message);
-void		start_simulation(t_sim *sim);
-int			sim_stopped(t_sim *sim);
-int			begin_compile(t_coder *coder);
-int			finish_compile(t_coder *coder);
-void		*monitor_routine(void *arg);
-t_error		init_sim_sync(t_sim *sim);
-void		destroy_dongle_sync(t_sim *sim, int count);
 
 #endif

@@ -1,5 +1,11 @@
 #include "../includes/codexion.h"
 
+/*
+** state.c : state_lockで守る共有状態(stop/started/compiles/開始時刻)
+** _locked付き関数はstate_lock取得済みの文脈からしか呼ばない。
+** wake_all_dongles(dongle->lock)はstate_lockを手放してから呼ぶ。
+*/
+
 void	start_simulation(t_sim *sim)
 {
 	long long	now;
