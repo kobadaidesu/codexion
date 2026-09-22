@@ -110,7 +110,6 @@ struct s_sim
 t_error		parse_args(int argc, char **argv, t_config *config);
 t_error		parse_number(char *str, long long *value);
 t_error		parse_scheduler(char *str, t_scheduler *scheduler);
-int			print_error(t_error code);
 t_error		init_sim(t_sim *sim, t_config *config);
 void		destroy_sim(t_sim *sim);
 t_error		run_threads(t_sim *sim);
@@ -137,7 +136,6 @@ int			begin_compile(t_coder *coder);
 int			finish_compile(t_coder *coder);
 void		*monitor_routine(void *arg);
 t_error		init_sim_sync(t_sim *sim);
-void		destroy_sim_sync(t_sim *sim);
 void		destroy_dongle_sync(t_sim *sim, int count);
 
 #endif
