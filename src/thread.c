@@ -1,20 +1,21 @@
 #include "../includes/codexion.h"
 
-static int	wait_start(t_coder *coder)
-{
-	t_sim	*sim;
+/*
+** thread.c : thread生成と一斉スタートゲート、join
+** 全threadはwait_startで待ち、start_simulationのbroadcastで同時に開始。
+** create失敗時はstopを立てて起こしてから作成済み分をjoinする。
+*/
 
-	sim = coder->sim;
+int	wait_start(t_sim *sim)
+{
+	int	ready;
+
 	pthread_mutex_lock(&sim->state_lock);
 	while (!sim->started && !sim->stop)
 		pthread_cond_wait(&sim->start_cond, &sim->state_lock);
-	if (sim->stop)
-	{
-		pthread_mutex_unlock(&sim->state_lock);
-		return (0);
-	}
+	ready = !sim->stop;
 	pthread_mutex_unlock(&sim->state_lock);
-	return (1);
+	return (ready);
 }
 
 static void	*coder_routine(void *arg)
@@ -22,7 +23,7 @@ static void	*coder_routine(void *arg)
 	t_coder	*coder;
 
 	coder = (t_coder *)arg;
-	if (!wait_start(coder))
+	if (!wait_start(coder->sim))
 		return (NULL);
 	while (coder->compiles
 		< coder->sim->config.number_of_compiles_required)

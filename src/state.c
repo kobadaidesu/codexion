@@ -1,5 +1,11 @@
 #include "../includes/codexion.h"
 
+/*
+** state.c : state_lockで守る共有状態(stop/started/compiles/開始時刻)
+** _locked付き関数はstate_lock取得済みの文脈からしか呼ばない。
+** wake_all_dongles(dongle->lock)はstate_lockを手放してから呼ぶ。
+*/
+
 void	start_simulation(t_sim *sim)
 {
 	long long	now;
@@ -38,8 +44,7 @@ int	begin_compile(t_coder *coder)
 	sim = coder->sim;
 	now = get_time_us();
 	pthread_mutex_lock(&sim->state_lock);
-	deadline = coder->last_compile_start
-		+ sim->config.time_to_burnout * 1000;
+	deadline = coder_deadline_locked(coder);
 	if (sim->stop || now >= deadline)
 	{
 		pthread_mutex_unlock(&sim->state_lock);
@@ -50,7 +55,7 @@ int	begin_compile(t_coder *coder)
 	return (1);
 }
 
-static int	all_compiled(t_sim *sim)
+static int	all_completed_locked(t_sim *sim)
 {
 	int	i;
 
@@ -68,18 +73,19 @@ static int	all_compiled(t_sim *sim)
 int	finish_compile(t_coder *coder)
 {
 	t_sim	*sim;
+	int		finished;
 
 	sim = coder->sim;
+	finished = 0;
 	pthread_mutex_lock(&sim->state_lock);
 	coder->compiles++;
-	if (all_compiled(sim))
-		sim->stop = 1;
-	if (sim->stop)
+	if (all_completed_locked(sim))
 	{
-		pthread_cond_broadcast(&sim->start_cond);
-		pthread_mutex_unlock(&sim->state_lock);
-		return (0);
+		sim->stop = 1;
+		finished = 1;
 	}
 	pthread_mutex_unlock(&sim->state_lock);
-	return (1);
+	if (finished)
+		wake_all_dongles(sim);
+	return (!finished);
 }

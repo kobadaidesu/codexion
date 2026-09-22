@@ -1,5 +1,10 @@
 #include "../includes/codexion.h"
 
+/*
+** coder.c : coderの1周(取得 → compile → debug → refactor)
+** dongleはIDの小さい方から取得して循環待ちを防ぐ。
+*/
+
 static void	order_dongles(t_coder *coder,
 	t_dongle **first, t_dongle **second)
 {
@@ -15,13 +20,25 @@ static void	order_dongles(t_coder *coder,
 	}
 }
 
+/* 1人の場合:dongleは1本だけ。compileできず、monitorのburnoutを待つ */
+static int	take_single(t_coder *coder)
+{
+	if (!dongle_take(coder, coder->left))
+		return (0);
+	log_state(coder, "has taken a dongle");
+	while (!sim_stopped(coder->sim))
+		usleep(500);
+	dongle_release(coder, coder->left);
+	return (0);
+}
+
 static int	take_pair(t_coder *coder)
 {
 	t_dongle	*first;
 	t_dongle	*second;
 
 	if (coder->left == coder->right)
-		return (0);
+		return (take_single(coder));
 	order_dongles(coder, &first, &second);
 	if (!dongle_take(coder, first))
 		return (0);
@@ -35,40 +52,25 @@ static int	take_pair(t_coder *coder)
 	return (1);
 }
 
-static void	release_pair(t_coder *coder)
+static int	run_phase(t_coder *coder, char *state, long long duration_ms)
 {
-	dongle_release(coder, coder->left);
-	dongle_release(coder, coder->right);
-}
-
-static int	debug_and_refactor(t_coder *coder)
-{
-	log_state(coder, "is debugging");
-	if (!wait_phase(coder, coder->sim->config.time_to_debug))
-		return (0);
-	log_state(coder, "is refactoring");
-	if (!wait_phase(coder, coder->sim->config.time_to_refactor))
-		return (0);
-	return (1);
+	log_state(coder, state);
+	return (wait_phase(coder, duration_ms));
 }
 
 int	coder_cycle(t_coder *coder)
 {
+	t_config	*cfg;
+	int			ok;
+
+	cfg = &coder->sim->config;
 	if (!take_pair(coder))
 		return (0);
-	if (!begin_compile(coder))
-	{
-		release_pair(coder);
-		return (0);
-	}
-	log_state(coder, "is compiling");
-	if (!wait_phase(coder, coder->sim->config.time_to_compile))
-	{
-		release_pair(coder);
-		return (0);
-	}
+	ok = begin_compile(coder)
+		&& run_phase(coder, "is compiling", cfg->time_to_compile);
 	release_pair(coder);
-	if (!finish_compile(coder))
+	if (!ok || !finish_compile(coder))
 		return (0);
-	return (debug_and_refactor(coder));
+	return (run_phase(coder, "is debugging", cfg->time_to_debug)
+		&& run_phase(coder, "is refactoring", cfg->time_to_refactor));
 }
