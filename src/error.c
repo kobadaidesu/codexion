@@ -20,6 +20,8 @@ static const char	*error_message(t_error code)
 		return ("thread operation failed");
 	if (code == ERR_MUTEX)
 		return ("mutex operation failed");
+	if (code == ERR_COND)
+		return ("condition variable operation failed");
 	return ("unknown error");
 }
 

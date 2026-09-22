@@ -24,17 +24,15 @@ static int	take_pair(t_coder *coder)
 		return (0);
 	order_dongles(coder, &first, &second);
 	dongle_take(coder, first);
-	printf("[debug] coder %d took dongle %d\n",
-		coder->id, first->id);
+	log_state(coder, "has taken a dongle");
 	dongle_take(coder, second);
-	printf("[debug] coder %d took dongle %d\n",
-		coder->id, second->id);
+	log_state(coder, "has taken a dongle");
 	return (1);
 }
 
 static void	compile_code(t_coder *coder)
 {
-	printf("[debug] coder %d is compiling\n", coder->id);
+	log_state(coder, "is compiling");
 	usleep(coder->sim->config.time_to_compile * 1000);
 	dongle_release(coder, coder->left);
 	dongle_release(coder, coder->right);
@@ -43,9 +41,9 @@ static void	compile_code(t_coder *coder)
 
 static void	debug_and_refactor(t_coder *coder)
 {
-	printf("[debug] coder %d is debugging\n", coder->id);
+	log_state(coder, "is debugging");
 	usleep(coder->sim->config.time_to_debug * 1000);
-	printf("[debug] coder %d is refactoring\n", coder->id);
+	log_state(coder, "is refactoring");
 	usleep(coder->sim->config.time_to_refactor * 1000);
 }
 

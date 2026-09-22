@@ -7,9 +7,13 @@ SRC =	src/main.c \
 		src/parse.c \
 		src/parse_utils.c \
 		src/init.c \
+		src/init_sync.c \
 		src/thread.c \
 		src/dongle.c \
 		src/coder.c \
+		src/time.c \
+		src/log.c \
+		src/cleanup.c \
 		src/error.c \
 
 OBJ = $(SRC:.c=.o)
