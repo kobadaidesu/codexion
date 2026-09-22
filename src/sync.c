@@ -18,9 +18,27 @@ t_error	init_sim_sync(t_sim *sim)
 	return (SUCCESS);
 }
 
-void	destroy_sim_sync(t_sim *sim)
+static void	destroy_sim_sync(t_sim *sim)
 {
 	pthread_cond_destroy(&sim->start_cond);
 	pthread_mutex_destroy(&sim->state_lock);
 	pthread_mutex_destroy(&sim->log_lock);
+}
+
+void	destroy_dongle_sync(t_sim *sim, int count)
+{
+	while (count > 0)
+	{
+		count--;
+		pthread_cond_destroy(&sim->dongles[count].cond);
+		pthread_mutex_destroy(&sim->dongles[count].lock);
+	}
+}
+
+void	destroy_sim(t_sim *sim)
+{
+	destroy_dongle_sync(sim, sim->config.number_of_coders);
+	destroy_sim_sync(sim);
+	free(sim->coders);
+	free(sim->dongles);
 }

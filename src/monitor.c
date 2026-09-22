@@ -1,14 +1,11 @@
 #include "../includes/codexion.h"
 
-static void	wait_monitor_start(t_sim *sim)
-{
-	pthread_mutex_lock(&sim->state_lock);
-	while (!sim->started && !sim->stop)
-		pthread_cond_wait(&sim->start_cond, &sim->state_lock);
-	pthread_mutex_unlock(&sim->state_lock);
-}
+/*
+** monitor.c : burnout監視thread(約0.5ms周期、要件は10ms以内の検知)
+** lock順: state_lock → log_lock。dongle->lockはstate解放後にのみ取る。
+*/
 
-static int	find_burned_coder(t_sim *sim, long long now)
+static int	find_burned_locked(t_sim *sim, long long now)
 {
 	long long	deadline;
 	int			i;
@@ -19,8 +16,7 @@ static int	find_burned_coder(t_sim *sim, long long now)
 		if (sim->coders[i].compiles
 			< sim->config.number_of_compiles_required)
 		{
-			deadline = sim->coders[i].last_compile_start
-				+ sim->config.time_to_burnout * 1000;
+			deadline = coder_deadline_locked(&sim->coders[i]);
 			if (now >= deadline)
 				return (i);
 		}
@@ -29,13 +25,25 @@ static int	find_burned_coder(t_sim *sim, long long now)
 	return (-1);
 }
 
+/* state_lock取得済み前提。stop設定とburnoutログを不可分にする */
+static void	report_burnout(t_sim *sim, int index)
+{
+	long long	time;
+
+	sim->stop = 1;
+	pthread_mutex_lock(&sim->log_lock);
+	time = get_elapsed_ms(sim);
+	printf("%lld %d burned out\n", time, sim->coders[index].id);
+	pthread_mutex_unlock(&sim->log_lock);
+}
+
 void	*monitor_routine(void *arg)
 {
 	t_sim	*sim;
 	int		burned;
 
 	sim = (t_sim *)arg;
-	wait_monitor_start(sim);
+	wait_start(sim);
 	while (1)
 	{
 		pthread_mutex_lock(&sim->state_lock);
@@ -44,16 +52,16 @@ void	*monitor_routine(void *arg)
 			pthread_mutex_unlock(&sim->state_lock);
 			break ;
 		}
-		burned = find_burned_coder(sim, get_time_us());
+		burned = find_burned_locked(sim, get_time_us());
 		if (burned >= 0)
 		{
-			sim->stop = 1;
+			report_burnout(sim, burned);
 			pthread_mutex_unlock(&sim->state_lock);
-			log_burnout(sim, burned + 1);
+			wake_all_dongles(sim);
 			break ;
 		}
 		pthread_mutex_unlock(&sim->state_lock);
-		usleep(1000);
+		usleep(500);
 	}
 	return (NULL);
 }
