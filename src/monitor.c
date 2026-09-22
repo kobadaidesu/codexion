@@ -1,13 +1,5 @@
 #include "../includes/codexion.h"
 
-static void	wait_monitor_start(t_sim *sim)
-{
-	pthread_mutex_lock(&sim->state_lock);
-	while (!sim->started && !sim->stop)
-		pthread_cond_wait(&sim->start_cond, &sim->state_lock);
-	pthread_mutex_unlock(&sim->state_lock);
-}
-
 static int	find_burned_locked(t_sim *sim, long long now)
 {
 	long long	deadline;
@@ -46,7 +38,7 @@ void	*monitor_routine(void *arg)
 	int		burned;
 
 	sim = (t_sim *)arg;
-	wait_monitor_start(sim);
+	wait_start(sim);
 	while (1)
 	{
 		pthread_mutex_lock(&sim->state_lock);

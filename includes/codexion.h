@@ -111,6 +111,7 @@ t_error		parse_args(int argc, char **argv, t_config *config);
 t_error		init_sim(t_sim *sim, t_config *config);
 void		destroy_sim(t_sim *sim);
 t_error		run_threads(t_sim *sim);
+int			wait_start(t_sim *sim);
 int			dongle_take(t_coder *coder, t_dongle *dongle);
 void		dongle_release(t_coder *coder, t_dongle *dongle);
 void		wake_all_dongles(t_sim *sim);
