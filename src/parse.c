@@ -76,7 +76,7 @@ t_error	parse_args(int argc, char **argv, t_config *config)
 			return (err);
 		i++;
 	}
-	err = parse_scheduler(argv[ARG_SCHEDULER], &config->scheduler);
+	err = parse_scheduler(argv[8], &config->scheduler);
 	if (err != SUCCESS)
 		return (err);
 	assign_config(config, values);
