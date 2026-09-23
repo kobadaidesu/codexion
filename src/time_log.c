@@ -22,7 +22,6 @@ long long	get_elapsed_ms(t_sim *sim)
 	return ((now - sim->start_time) / 1000);
 }
 
-/* Caller must hold state_lock. Returns absolute burnout deadline in us. */
 long long	coder_deadline_locked(t_coder *coder)
 {
 	return (coder->last_compile_start

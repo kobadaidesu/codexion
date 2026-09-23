@@ -1,71 +1,78 @@
 #include "../includes/codexion.h"
 
-static int	higher_priority(t_waiter *a, t_waiter *b,
-	t_scheduler scheduler)
+/*
+** heap_order.c : FIFO/EDF比較とヒープの並び直し
+** FIFO: ticket昇順(そのdongleへの到着順)
+** EDF : deadline昇順、同値ならcoder id昇順(tie-breaker)
+*/
+
+static int	higher(t_dongle *d, int a, int b, t_scheduler scheduler)
 {
 	if (scheduler == FIFO)
-		return (a->ticket < b->ticket);
-	if (a->deadline != b->deadline)
-		return (a->deadline < b->deadline);
-	return (a->coder->id < b->coder->id);
+		return (d->wait_tickets[a] < d->wait_tickets[b]);
+	if (d->wait_deadlines[a] != d->wait_deadlines[b])
+		return (d->wait_deadlines[a] < d->wait_deadlines[b]);
+	return (d->wait_ids[a] < d->wait_ids[b]);
 }
 
-static void	swap_waiter(t_waiter *a, t_waiter *b)
+static void	swap_slots(t_dongle *d, int a, int b)
 {
-	t_waiter	tmp;
+	long long	tmp;
 
-	tmp = *a;
-	*a = *b;
-	*b = tmp;
+	tmp = d->wait_ids[a];
+	d->wait_ids[a] = d->wait_ids[b];
+	d->wait_ids[b] = (int)tmp;
+	tmp = d->wait_tickets[a];
+	d->wait_tickets[a] = d->wait_tickets[b];
+	d->wait_tickets[b] = tmp;
+	tmp = d->wait_deadlines[a];
+	d->wait_deadlines[a] = d->wait_deadlines[b];
+	d->wait_deadlines[b] = tmp;
 }
 
-void	heap_up(t_heap *heap, int index, t_scheduler scheduler)
+void	heap_up(t_dongle *dongle, int index, t_scheduler scheduler)
 {
 	int	parent;
 
 	while (index > 0)
 	{
 		parent = (index - 1) / 2;
-		if (!higher_priority(&heap->data[index],
-				&heap->data[parent], scheduler))
+		if (!higher(dongle, index, parent, scheduler))
 			break ;
-		swap_waiter(&heap->data[index], &heap->data[parent]);
+		swap_slots(dongle, index, parent);
 		index = parent;
 	}
 }
 
-void	heap_down(t_heap *heap, int index, t_scheduler scheduler)
+void	heap_down(t_dongle *dongle, int index, t_scheduler scheduler)
 {
 	int	child;
 
-	while (index * 2 + 1 < heap->size)
+	while (index * 2 + 1 < dongle->wait_count)
 	{
 		child = index * 2 + 1;
-		if (child + 1 < heap->size
-			&& higher_priority(&heap->data[child + 1],
-				&heap->data[child], scheduler))
+		if (child + 1 < dongle->wait_count
+			&& higher(dongle, child + 1, child, scheduler))
 			child++;
-		if (!higher_priority(&heap->data[child],
-				&heap->data[index], scheduler))
+		if (!higher(dongle, child, index, scheduler))
 			break ;
-		swap_waiter(&heap->data[index], &heap->data[child]);
+		swap_slots(dongle, index, child);
 		index = child;
 	}
 }
 
-void	heap_fix(t_heap *heap, int index, t_scheduler scheduler)
+void	heap_fix(t_dongle *dongle, int index, t_scheduler scheduler)
 {
 	int	parent;
 
 	if (index <= 0)
 	{
-		heap_down(heap, index, scheduler);
+		heap_down(dongle, index, scheduler);
 		return ;
 	}
 	parent = (index - 1) / 2;
-	if (higher_priority(&heap->data[index],
-			&heap->data[parent], scheduler))
-		heap_up(heap, index, scheduler);
+	if (higher(dongle, index, parent, scheduler))
+		heap_up(dongle, index, scheduler);
 	else
-		heap_down(heap, index, scheduler);
+		heap_down(dongle, index, scheduler);
 }

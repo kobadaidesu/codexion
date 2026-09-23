@@ -2,7 +2,8 @@
 
 /*
 ** monitor.c : burnout監視thread(約0.5ms周期、要件は10ms以内の検知)
-** lock順: state_lock → log_lock。dongle->lockはstate解放後にのみ取る。
+** lock順: state_lock → log_lock。
+** stopの理由が何であれ、終了時に全dongleを起こしてから抜ける。
 */
 
 static int	find_burned_locked(t_sim *sim, long long now)
@@ -57,11 +58,11 @@ void	*monitor_routine(void *arg)
 		{
 			report_burnout(sim, burned);
 			pthread_mutex_unlock(&sim->state_lock);
-			wake_all_dongles(sim);
 			break ;
 		}
 		pthread_mutex_unlock(&sim->state_lock);
 		usleep(500);
 	}
+	wake_all_dongles(sim);
 	return (NULL);
 }

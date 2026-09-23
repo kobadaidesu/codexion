@@ -3,7 +3,7 @@
 /*
 ** dongle_take.c : 要求登録・待機・取得・停止時の要求取消
 ** lock順: dongle->lock → state_lock(逆は全コードで禁止)。
-** heap・holder・ticket・ready_atはdongle->lockの中でだけ触る。
+** 待ち行列・holder・ticket・ready_atはdongle->lockの中でだけ触る。
 */
 
 static long long	get_coder_deadline(t_coder *coder)
@@ -18,25 +18,17 @@ static long long	get_coder_deadline(t_coder *coder)
 
 static void	add_waiter(t_coder *coder, t_dongle *dongle)
 {
-	t_waiter	waiter;
+	long long	deadline;
 
-	waiter.coder = coder;
-	waiter.deadline = get_coder_deadline(coder);
+	deadline = get_coder_deadline(coder);
 	pthread_mutex_lock(&dongle->lock);
-	waiter.ticket = dongle->next_ticket;
-	dongle->next_ticket++;
-	heap_push(&dongle->waiters, waiter, coder->sim->config.scheduler);
+	heap_push(dongle, coder->id, deadline, coder->sim->config.scheduler);
 	pthread_mutex_unlock(&dongle->lock);
 }
 
 static int	can_grant(t_coder *coder, t_dongle *dongle)
 {
-	t_waiter	*top;
-
-	top = heap_top(&dongle->waiters);
-	if (top == NULL)
-		return (0);
-	if (top->coder != coder)
+	if (heap_top_id(dongle) != coder->id)
 		return (0);
 	if (dongle->holder != 0)
 		return (0);
@@ -72,14 +64,14 @@ int	dongle_take(t_coder *coder, t_dongle *dongle)
 	{
 		if (can_grant(coder, dongle))
 		{
-			heap_pop(&dongle->waiters, scheduler);
+			heap_pop(dongle, scheduler);
 			dongle->holder = coder->id;
 			pthread_mutex_unlock(&dongle->lock);
 			return (1);
 		}
 		wait_dongle(dongle);
 	}
-	heap_remove_coder(&dongle->waiters, coder, scheduler);
+	heap_remove(dongle, coder->id, scheduler);
 	pthread_mutex_unlock(&dongle->lock);
 	return (0);
 }
