@@ -17,18 +17,18 @@ static t_error	init_one_dongle(t_dongle *dongle, int id)
 	return (SUCCESS);
 }
 
-static t_error	init_dongles(t_sim *sim)
+static t_error	init_dongles(t_dongle *dongles, int count)
 {
 	int		i;
 	t_error	err;
 
 	i = 0;
-	while (i < sim->config.number_of_coders)
+	while (i < count)
 	{
-		err = init_one_dongle(&sim->dongles[i], i + 1);
+		err = init_one_dongle(&dongles[i], i + 1);
 		if (err != SUCCESS)
 		{
-			destroy_dongle_sync(sim, i);
+			destroy_dongle_sync(dongles, i);
 			return (err);
 		}
 		i++;
@@ -36,7 +36,7 @@ static t_error	init_dongles(t_sim *sim)
 	return (SUCCESS);
 }
 
-static void	init_coders(t_sim *sim)
+static void	init_coders(t_sim *sim, t_coder *coders, t_dongle *dongles)
 {
 	int	i;
 	int	count;
@@ -45,31 +45,32 @@ static void	init_coders(t_sim *sim)
 	i = 0;
 	while (i < count)
 	{
-		sim->coders[i].id = i + 1;
-		sim->coders[i].sim = sim;
-		sim->coders[i].compiles = 0;
-		sim->coders[i].last_compile_start = 0;
-		sim->coders[i].left = &sim->dongles[(i + count - 1) % count];
-		sim->coders[i].right = &sim->dongles[i];
+		coders[i].id = i + 1;
+		coders[i].sim = sim;
+		coders[i].compiles = 0;
+		coders[i].last_compile_start = 0;
+		coders[i].left = &dongles[(i + count - 1) % count];
+		coders[i].right = &dongles[i];
 		i++;
 	}
 }
 
-static t_error	alloc_arrays(t_sim *sim, int count)
+static t_error	alloc_arrays(t_coder **coders, t_dongle **dongles, int count)
 {
-	sim->coders = malloc(sizeof(t_coder) * count);
-	if (!sim->coders)
+	*coders = malloc(sizeof(t_coder) * count);
+	if (!*coders)
 		return (ERR_MALLOC);
-	sim->dongles = malloc(sizeof(t_dongle) * count);
-	if (!sim->dongles)
+	*dongles = malloc(sizeof(t_dongle) * count);
+	if (!*dongles)
 	{
-		free(sim->coders);
+		free(*coders);
 		return (ERR_MALLOC);
 	}
 	return (SUCCESS);
 }
 
-t_error	init_sim(t_sim *sim, t_config *config)
+t_error	init_sim(t_sim *sim, t_config *config,
+	t_coder **coders, t_dongle **dongles)
 {
 	t_error	err;
 
@@ -78,22 +79,22 @@ t_error	init_sim(t_sim *sim, t_config *config)
 	sim->started = 0;
 	sim->stop = 0;
 	sim->completed = 0;
-	err = alloc_arrays(sim, config->number_of_coders);
+	err = alloc_arrays(coders, dongles, config->number_of_coders);
 	if (err != SUCCESS)
 		return (err);
-	err = init_dongles(sim);
+	err = init_dongles(*dongles, config->number_of_coders);
 	if (err == SUCCESS)
 	{
 		err = init_sim_sync(sim);
 		if (err != SUCCESS)
-			destroy_dongle_sync(sim, config->number_of_coders);
+			destroy_dongle_sync(*dongles, config->number_of_coders);
 	}
 	if (err != SUCCESS)
 	{
-		free(sim->coders);
-		free(sim->dongles);
+		free(*coders);
+		free(*dongles);
 		return (err);
 	}
-	init_coders(sim);
+	init_coders(sim, *coders, *dongles);
 	return (SUCCESS);
 }

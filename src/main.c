@@ -35,6 +35,8 @@ int	main(int argc, char **argv)
 {
 	t_config	config;
 	t_sim		sim;
+	t_coder		*coders;
+	t_dongle	*dongles;
 	t_error		err;
 
 	err = parse_args(argc, argv, &config);
@@ -42,11 +44,11 @@ int	main(int argc, char **argv)
 		return (print_error(err));
 	if (config.number_of_compiles_required == 0)
 		return (EXIT_SUCCESS);
-	err = init_sim(&sim, &config);
+	err = init_sim(&sim, &config, &coders, &dongles);
 	if (err != SUCCESS)
 		return (print_error(err));
-	err = run_threads(&sim);
-	destroy_sim(&sim);
+	err = run_threads(&sim, coders);
+	destroy_sim(&sim, coders, dongles);
 	if (err != SUCCESS)
 		return (print_error(err));
 	return (EXIT_SUCCESS);

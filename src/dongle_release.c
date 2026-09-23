@@ -27,16 +27,17 @@ void	release_pair(t_coder *coder)
 	dongle_release(coder, coder->right);
 }
 
-void	wake_all_dongles(t_sim *sim)
+/* coders[i].right = dongles[i] の対応で全dongleを1回ずつ起こす */
+void	wake_all_dongles(t_coder *coders, int count)
 {
 	int	i;
 
 	i = 0;
-	while (i < sim->config.number_of_coders)
+	while (i < count)
 	{
-		pthread_mutex_lock(&sim->dongles[i].lock);
-		pthread_cond_broadcast(&sim->dongles[i].cond);
-		pthread_mutex_unlock(&sim->dongles[i].lock);
+		pthread_mutex_lock(&coders[i].right->lock);
+		pthread_cond_broadcast(&coders[i].right->cond);
+		pthread_mutex_unlock(&coders[i].right->lock);
 		i++;
 	}
 }

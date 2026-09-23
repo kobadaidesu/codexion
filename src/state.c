@@ -5,7 +5,7 @@
 ** _locked付き関数はstate_lock取得済みの文脈からしか呼ばない。
 */
 
-void	start_simulation(t_sim *sim)
+void	start_simulation(t_sim *sim, t_coder *coders)
 {
 	long long	now;
 	int			i;
@@ -16,7 +16,7 @@ void	start_simulation(t_sim *sim)
 	i = 0;
 	while (i < sim->config.number_of_coders)
 	{
-		sim->coders[i].last_compile_start = now;
+		coders[i].last_compile_start = now;
 		i++;
 	}
 	sim->started = 1;

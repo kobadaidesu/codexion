@@ -25,20 +25,20 @@ static void	destroy_sim_sync(t_sim *sim)
 	pthread_mutex_destroy(&sim->log_lock);
 }
 
-void	destroy_dongle_sync(t_sim *sim, int count)
+void	destroy_dongle_sync(t_dongle *dongles, int count)
 {
 	while (count > 0)
 	{
 		count--;
-		pthread_cond_destroy(&sim->dongles[count].cond);
-		pthread_mutex_destroy(&sim->dongles[count].lock);
+		pthread_cond_destroy(&dongles[count].cond);
+		pthread_mutex_destroy(&dongles[count].lock);
 	}
 }
 
-void	destroy_sim(t_sim *sim)
+void	destroy_sim(t_sim *sim, t_coder *coders, t_dongle *dongles)
 {
-	destroy_dongle_sync(sim, sim->config.number_of_coders);
+	destroy_dongle_sync(dongles, sim->config.number_of_coders);
 	destroy_sim_sync(sim);
-	free(sim->coders);
-	free(sim->dongles);
+	free(coders);
+	free(dongles);
 }
