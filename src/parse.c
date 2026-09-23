@@ -51,14 +51,13 @@ static t_error	parse_scheduler(char *str, t_scheduler *scheduler)
 
 static void	assign_config(t_config *config, long long *values)
 {
-	config->number_of_coders = (int)values[ARG_NUMBER_OF_CODERS - 1];
-	config->time_to_burnout = values[ARG_TIME_TO_BURNOUT - 1];
-	config->time_to_compile = values[ARG_TIME_TO_COMPILE - 1];
-	config->time_to_debug = values[ARG_TIME_TO_DEBUG - 1];
-	config->time_to_refactor = values[ARG_TIME_TO_REFACTOR - 1];
-	config->number_of_compiles_required
-		= (int)values[ARG_COMPILES_REQUIRED - 1];
-	config->dongle_cooldown = values[ARG_DONGLE_COOLDOWN - 1];
+	config->number_of_coders = (int)values[0];
+	config->time_to_burnout = values[1];
+	config->time_to_compile = values[2];
+	config->time_to_debug = values[3];
+	config->time_to_refactor = values[4];
+	config->number_of_compiles_required = (int)values[5];
+	config->dongle_cooldown = values[6];
 }
 
 t_error	parse_args(int argc, char **argv, t_config *config)
