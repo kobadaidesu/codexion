@@ -1,36 +1,29 @@
 #include "../includes/codexion.h"
 
-static t_error	init_one_dongle(t_dongle *dongle, int id)
+static t_error	init_sim_sync(t_sim *sim)
 {
-	dongle->id = id;
-	dongle->holder = 0;
-	dongle->ready_at = 0;
-	dongle->next_ticket = 0;
-	dongle->wait_count = 0;
-	if (pthread_mutex_init(&dongle->lock, NULL) != 0)
-		return (ERR_MUTEX);
-	if (pthread_cond_init(&dongle->cond, NULL) != 0)
-	{
-		pthread_mutex_destroy(&dongle->lock);
-		return (ERR_COND);
-	}
+	if (pthread_mutex_init(&sim->log_lock, NULL) != 0
+		|| pthread_mutex_init(&sim->state_lock, NULL) != 0
+		|| pthread_cond_init(&sim->start_cond, NULL) != 0)
+		return (ERR_FATAL);
 	return (SUCCESS);
 }
 
 static t_error	init_dongles(t_dongle *dongles, int count)
 {
-	int		i;
-	t_error	err;
+	int	i;
 
 	i = 0;
 	while (i < count)
 	{
-		err = init_one_dongle(&dongles[i], i + 1);
-		if (err != SUCCESS)
-		{
-			destroy_dongle_sync(dongles, i);
-			return (err);
-		}
+		dongles[i].id = i + 1;
+		dongles[i].holder = 0;
+		dongles[i].ready_at = 0;
+		dongles[i].next_ticket = 0;
+		dongles[i].wait_count = 0;
+		if (pthread_mutex_init(&dongles[i].lock, NULL) != 0
+			|| pthread_cond_init(&dongles[i].cond, NULL) != 0)
+			return (ERR_FATAL);
 		i++;
 	}
 	return (SUCCESS);
@@ -59,12 +52,12 @@ static t_error	alloc_arrays(t_coder **coders, t_dongle **dongles, int count)
 {
 	*coders = malloc(sizeof(t_coder) * count);
 	if (!*coders)
-		return (ERR_MALLOC);
+		return (ERR_FATAL);
 	*dongles = malloc(sizeof(t_dongle) * count);
 	if (!*dongles)
 	{
 		free(*coders);
-		return (ERR_MALLOC);
+		return (ERR_FATAL);
 	}
 	return (SUCCESS);
 }
@@ -84,11 +77,7 @@ t_error	init_sim(t_sim *sim, t_config *config,
 		return (err);
 	err = init_dongles(*dongles, config->number_of_coders);
 	if (err == SUCCESS)
-	{
 		err = init_sim_sync(sim);
-		if (err != SUCCESS)
-			destroy_dongle_sync(*dongles, config->number_of_coders);
-	}
 	if (err != SUCCESS)
 	{
 		free(*coders);

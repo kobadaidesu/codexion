@@ -1,9 +1,10 @@
 #include "../includes/codexion.h"
 
 /*
-** dongle_take.c : 要求登録・待機・取得・停止時の要求取消
+** dongle_take.c : 要求登録・待機・取得
 ** lock順: dongle->lock → state_lock(逆は全コードで禁止)。
 ** 待ち行列・holder・ticket・ready_atはdongle->lockの中でだけ触る。
+** 停止時は要求を残したまま抜ける(停止後は誰も取得しないため無害)。
 */
 
 static long long	get_coder_deadline(t_coder *coder)
@@ -71,7 +72,6 @@ int	dongle_take(t_coder *coder, t_dongle *dongle)
 		}
 		wait_dongle(dongle);
 	}
-	heap_remove(dongle, coder->id, scheduler);
 	pthread_mutex_unlock(&dongle->lock);
 	return (0);
 }

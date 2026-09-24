@@ -1,66 +1,87 @@
 #include "../includes/codexion.h"
 
 /*
-** heap.c : dongle待ち行列(二分ヒープ)の追加・取り出し・削除
-** 呼び出し側がdongle->lockを取得していることが前提。
+** heap.c : dongle待ち行列(二分ヒープ)。呼び出し側がdongle->lock取得済み前提。
+** FIFO: ticket昇順(そのdongleへの到着順)
+** EDF : deadline昇順、同値ならcoder id昇順(tie-breaker)
 */
 
-static void	copy_slot(t_dongle *d, int dst, int src)
+static int	higher(t_dongle *d, int a, int b, t_scheduler scheduler)
 {
-	d->wait_ids[dst] = d->wait_ids[src];
-	d->wait_tickets[dst] = d->wait_tickets[src];
-	d->wait_deadlines[dst] = d->wait_deadlines[src];
+	if (scheduler == FIFO)
+		return (d->wait_tickets[a] < d->wait_tickets[b]);
+	if (d->wait_deadlines[a] != d->wait_deadlines[b])
+		return (d->wait_deadlines[a] < d->wait_deadlines[b]);
+	return (d->wait_ids[a] < d->wait_ids[b]);
 }
 
-void	heap_push(t_dongle *dongle, int coder_id,
+static void	swap_slots(t_dongle *d, int a, int b)
+{
+	long long	tmp;
+
+	tmp = d->wait_ids[a];
+	d->wait_ids[a] = d->wait_ids[b];
+	d->wait_ids[b] = (int)tmp;
+	tmp = d->wait_tickets[a];
+	d->wait_tickets[a] = d->wait_tickets[b];
+	d->wait_tickets[b] = tmp;
+	tmp = d->wait_deadlines[a];
+	d->wait_deadlines[a] = d->wait_deadlines[b];
+	d->wait_deadlines[b] = tmp;
+}
+
+void	heap_push(t_dongle *d, int coder_id,
 	long long deadline, t_scheduler scheduler)
 {
-	int	i;
+	int	index;
+	int	parent;
 
-	i = dongle->wait_count;
-	dongle->wait_ids[i] = coder_id;
-	dongle->wait_tickets[i] = dongle->next_ticket;
-	dongle->next_ticket++;
-	dongle->wait_deadlines[i] = deadline;
-	dongle->wait_count++;
-	heap_up(dongle, i, scheduler);
-}
-
-int	heap_top_id(t_dongle *dongle)
-{
-	if (dongle->wait_count == 0)
-		return (0);
-	return (dongle->wait_ids[0]);
-}
-
-void	heap_pop(t_dongle *dongle, t_scheduler scheduler)
-{
-	if (dongle->wait_count == 0)
-		return ;
-	dongle->wait_count--;
-	if (dongle->wait_count == 0)
-		return ;
-	copy_slot(dongle, 0, dongle->wait_count);
-	heap_down(dongle, 0, scheduler);
-}
-
-void	heap_remove(t_dongle *dongle, int coder_id, t_scheduler scheduler)
-{
-	int	i;
-
-	i = 0;
-	while (i < dongle->wait_count)
+	index = d->wait_count;
+	d->wait_ids[index] = coder_id;
+	d->wait_tickets[index] = d->next_ticket;
+	d->next_ticket++;
+	d->wait_deadlines[index] = deadline;
+	d->wait_count++;
+	while (index > 0)
 	{
-		if (dongle->wait_ids[i] == coder_id)
-		{
-			dongle->wait_count--;
-			if (i < dongle->wait_count)
-			{
-				copy_slot(dongle, i, dongle->wait_count);
-				heap_fix(dongle, i, scheduler);
-			}
-			return ;
-		}
-		i++;
+		parent = (index - 1) / 2;
+		if (!higher(d, index, parent, scheduler))
+			break ;
+		swap_slots(d, index, parent);
+		index = parent;
+	}
+}
+
+int	heap_top_id(t_dongle *d)
+{
+	if (d->wait_count == 0)
+		return (0);
+	return (d->wait_ids[0]);
+}
+
+void	heap_pop(t_dongle *d, t_scheduler scheduler)
+{
+	int	index;
+	int	child;
+
+	if (d->wait_count == 0)
+		return ;
+	d->wait_count--;
+	if (d->wait_count == 0)
+		return ;
+	d->wait_ids[0] = d->wait_ids[d->wait_count];
+	d->wait_tickets[0] = d->wait_tickets[d->wait_count];
+	d->wait_deadlines[0] = d->wait_deadlines[d->wait_count];
+	index = 0;
+	while (index * 2 + 1 < d->wait_count)
+	{
+		child = index * 2 + 1;
+		if (child + 1 < d->wait_count
+			&& higher(d, child + 1, child, scheduler))
+			child++;
+		if (!higher(d, child, index, scheduler))
+			break ;
+		swap_slots(d, index, child);
+		index = child;
 	}
 }

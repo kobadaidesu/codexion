@@ -23,14 +23,14 @@ static t_error	parse_number(char *str, long long *value)
 	int			i;
 
 	if (!is_number(str))
-		return (ERR_NOT_A_NUMBER);
+		return (ERR_ARGS);
 	result = 0;
 	i = 0;
 	while (str[i])
 	{
 		digit = str[i] - '0';
 		if (result > (INT_MAX - digit) / 10)
-			return (ERR_OVER_INT_MAX);
+			return (ERR_ARGS);
 		result = result * 10 + digit;
 		i++;
 	}
@@ -45,7 +45,7 @@ static t_error	parse_scheduler(char *str, t_scheduler *scheduler)
 	else if (strcmp(str, "edf") == 0)
 		*scheduler = EDF;
 	else
-		return (ERR_BAD_SCHEDULER);
+		return (ERR_ARGS);
 	return (SUCCESS);
 }
 
@@ -67,7 +67,7 @@ t_error	parse_args(int argc, char **argv, t_config *config)
 	int			i;
 
 	if (argc != 9)
-		return (ERR_ARGC);
+		return (ERR_ARGS);
 	i = 0;
 	while (i < 7)
 	{
@@ -81,6 +81,6 @@ t_error	parse_args(int argc, char **argv, t_config *config)
 		return (err);
 	assign_config(config, values);
 	if (config->number_of_coders < 1)
-		return (ERR_CODER_COUNT);
+		return (ERR_ARGS);
 	return (SUCCESS);
 }

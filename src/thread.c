@@ -34,18 +34,16 @@ static void	*coder_routine(void *arg)
 	return (NULL);
 }
 
-static int	join_threads(t_coder *coders, int count)
+static void	join_threads(t_coder *coders, int count)
 {
 	int	i;
 
 	i = 0;
 	while (i < count)
 	{
-		if (pthread_join(coders[i].thread, NULL) != 0)
-			return (1);
+		pthread_join(coders[i].thread, NULL);
 		i++;
 	}
-	return (0);
 }
 
 static t_error	stop_before_start(t_sim *sim, t_coder *coders, int created)
@@ -55,14 +53,13 @@ static t_error	stop_before_start(t_sim *sim, t_coder *coders, int created)
 	pthread_cond_broadcast(&sim->start_cond);
 	pthread_mutex_unlock(&sim->state_lock);
 	join_threads(coders, created);
-	return (ERR_THREAD);
+	return (ERR_FATAL);
 }
 
 t_error	run_threads(t_sim *sim, t_coder *coders)
 {
 	pthread_t	monitor;
 	int			i;
-	int			failed;
 
 	i = 0;
 	while (i < sim->config.number_of_coders)
@@ -75,10 +72,7 @@ t_error	run_threads(t_sim *sim, t_coder *coders)
 	if (pthread_create(&monitor, NULL, monitor_routine, coders) != 0)
 		return (stop_before_start(sim, coders, i));
 	start_simulation(sim, coders);
-	failed = join_threads(coders, i);
-	if (pthread_join(monitor, NULL) != 0)
-		failed = 1;
-	if (failed)
-		return (ERR_THREAD);
+	join_threads(coders, i);
+	pthread_join(monitor, NULL);
 	return (SUCCESS);
 }

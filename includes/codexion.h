@@ -14,15 +14,8 @@
 typedef enum e_error
 {
 	SUCCESS = 0,
-	ERR_ARGC,
-	ERR_NOT_A_NUMBER,
-	ERR_OVER_INT_MAX,
-	ERR_BAD_SCHEDULER,
-	ERR_CODER_COUNT,
-	ERR_MALLOC,
-	ERR_THREAD,
-	ERR_MUTEX,
-	ERR_COND
+	ERR_ARGS,
+	ERR_FATAL
 }	t_error;
 
 typedef enum e_scheduler
@@ -95,11 +88,6 @@ t_error		parse_args(int argc, char **argv, t_config *config);
 t_error		init_sim(t_sim *sim, t_config *config,
 				t_coder **coders, t_dongle **dongles);
 
-/* sync.c : mutex/condの生成と破棄・後片付け */
-t_error		init_sim_sync(t_sim *sim);
-void		destroy_dongle_sync(t_dongle *dongles, int count);
-void		destroy_sim(t_sim *sim, t_coder *coders, t_dongle *dongles);
-
 /* thread.c : thread生成・開始ゲート・join */
 t_error		run_threads(t_sim *sim, t_coder *coders);
 int			wait_start(t_sim *sim);
@@ -115,18 +103,11 @@ void		dongle_release(t_coder *coder, t_dongle *dongle);
 void		release_pair(t_coder *coder);
 void		wake_all_dongles(t_coder *coders, int count);
 
-/* heap.c : dongle待ち行列(優先度付きキュー)の追加・取り出し・削除 */
+/* heap.c : dongle待ち行列(優先度付きキュー)。FIFO/EDF比較も内包 */
 void		heap_push(t_dongle *dongle, int coder_id,
 				long long deadline, t_scheduler scheduler);
 int			heap_top_id(t_dongle *dongle);
 void		heap_pop(t_dongle *dongle, t_scheduler scheduler);
-void		heap_remove(t_dongle *dongle, int coder_id,
-				t_scheduler scheduler);
-
-/* heap_order.c : FIFO/EDF比較とヒープの並び直し */
-void		heap_up(t_dongle *dongle, int index, t_scheduler scheduler);
-void		heap_down(t_dongle *dongle, int index, t_scheduler scheduler);
-void		heap_fix(t_dongle *dongle, int index, t_scheduler scheduler);
 
 /* state.c : state_lockで守る状態遷移(開始・停止・compile記録) */
 void		start_simulation(t_sim *sim, t_coder *coders);
