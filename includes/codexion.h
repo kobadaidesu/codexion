@@ -81,27 +81,23 @@ typedef struct s_coder
 	t_dongle	*right;
 }	t_coder;
 
-/* parse.c : 引数検証・数値変換 */
-t_error		parse_args(int argc, char **argv, t_config *config);
-
-/* init.c : メモリ確保・coderとdongleの対応付け */
+/* main.c : 引数検証・入口・エラー表示 */
+/* init.c : 構築(メモリ・同期プリミティブ)と後片付け */
 t_error		init_sim(t_sim *sim, t_config *config,
 				t_coder **coders, t_dongle **dongles);
+void		destroy_sim(t_sim *sim, t_coder *coders, t_dongle *dongles);
 
-/* thread.c : thread生成・開始ゲート・join */
+/* thread.c : thread生成・一斉スタートゲート・join */
 t_error		run_threads(t_sim *sim, t_coder *coders);
 int			wait_start(t_sim *sim);
 
-/* coder.c : coderの1周(取得→compile→debug→refactor) */
-int			coder_cycle(t_coder *coder);
+/* coder.c : coderスレッドの一生(取得→compile→debug→refactor) */
+void		*coder_routine(void *arg);
 
-/* dongle_take.c : heap登録と条件変数待ちによる取得 */
+/* dongle.c : 要求登録・待機・取得・解放と時刻 */
+long long	get_time_us(void);
 int			dongle_take(t_coder *coder, t_dongle *dongle);
-
-/* dongle_release.c : 解放・cooldown設定・待機threadの起床 */
 void		dongle_release(t_coder *coder, t_dongle *dongle);
-void		release_pair(t_coder *coder);
-void		wake_all_dongles(t_coder *coders, int count);
 
 /* heap.c : dongle待ち行列(優先度付きキュー)。FIFO/EDF比較も内包 */
 void		heap_push(t_dongle *dongle, int coder_id,
@@ -109,20 +105,10 @@ void		heap_push(t_dongle *dongle, int coder_id,
 int			heap_top_id(t_dongle *dongle);
 void		heap_pop(t_dongle *dongle, t_scheduler scheduler);
 
-/* state.c : state_lockで守る状態遷移(開始・停止・compile記録) */
-void		start_simulation(t_sim *sim, t_coder *coders);
+/* state.c : 共有状態の遷移(開始・停止・compile記録)と監視thread */
 int			sim_stopped(t_sim *sim);
 int			begin_compile(t_coder *coder);
 int			finish_compile(t_coder *coder);
-
-/* monitor.c : burnout監視。引数はcoders配列(simはcoders[0].sim) */
 void		*monitor_routine(void *arg);
-
-/* time_log.c : 時刻取得・中断可能な待機・ログ直列化・期限計算 */
-long long	get_time_us(void);
-long long	get_elapsed_ms(t_sim *sim);
-long long	coder_deadline_locked(t_coder *coder);
-int			wait_phase(t_coder *coder, long long duration_ms);
-void		log_state(t_coder *coder, char *message);
 
 #endif

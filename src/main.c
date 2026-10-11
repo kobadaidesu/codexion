@@ -1,24 +1,62 @@
 #include "../includes/codexion.h"
 
-static void	destroy_dongle_sync(t_dongle *dongles, int count)
+static t_error	parse_number(const char *str, long long *value)
 {
-	while (count > 0)
+	long long	result;
+	int			digit;
+
+	if (!str || !*str)
+		return (ERR_ARGS);
+	result = 0;
+	while (*str)
 	{
-		count--;
-		pthread_cond_destroy(&dongles[count].cond);
-		pthread_mutex_destroy(&dongles[count].lock);
+		if (*str < '0' || *str > '9')
+			return (ERR_ARGS);
+		digit = *str - '0';
+		if (result > (INT_MAX - digit) / 10)
+			return (ERR_ARGS);
+		result = result * 10 + digit;
+		str++;
 	}
+	*value = result;
+	return (SUCCESS);
 }
 
-/* 所有者であるmainが後片付けも持つ */
-static void	destroy_sim(t_sim *sim, t_coder *coders, t_dongle *dongles)
+static void	assign_config(t_config *config, long long *values)
 {
-	destroy_dongle_sync(dongles, sim->config.number_of_coders);
-	pthread_cond_destroy(&sim->start_cond);
-	pthread_mutex_destroy(&sim->state_lock);
-	pthread_mutex_destroy(&sim->log_lock);
-	free(coders);
-	free(dongles);
+	config->number_of_coders = (int)values[0];
+	config->time_to_burnout = values[1];
+	config->time_to_compile = values[2];
+	config->time_to_debug = values[3];
+	config->time_to_refactor = values[4];
+	config->number_of_compiles_required = (int)values[5];
+	config->dongle_cooldown = values[6];
+}
+
+static t_error	parse_args(int argc, char **argv, t_config *config)
+{
+	long long	values[7];
+	int			i;
+
+	if (argc != 9)
+		return (ERR_ARGS);
+	i = 0;
+	while (i < 7)
+	{
+		if (parse_number(argv[i + 1], &values[i]) != SUCCESS)
+			return (ERR_ARGS);
+		i++;
+	}
+	if (!strcmp(argv[8], "fifo"))
+		config->scheduler = FIFO;
+	else if (!strcmp(argv[8], "edf"))
+		config->scheduler = EDF;
+	else
+		return (ERR_ARGS);
+	assign_config(config, values);
+	if (config->number_of_coders < 1)
+		return (ERR_ARGS);
+	return (SUCCESS);
 }
 
 static int	print_error(t_error code)

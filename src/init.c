@@ -1,14 +1,5 @@
 #include "../includes/codexion.h"
 
-static t_error	init_sim_sync(t_sim *sim)
-{
-	if (pthread_mutex_init(&sim->log_lock, NULL) != 0
-		|| pthread_mutex_init(&sim->state_lock, NULL) != 0
-		|| pthread_cond_init(&sim->start_cond, NULL) != 0)
-		return (ERR_FATAL);
-	return (SUCCESS);
-}
-
 static t_error	init_dongles(t_dongle *dongles, int count)
 {
 	int	i;
@@ -67,17 +58,17 @@ t_error	init_sim(t_sim *sim, t_config *config,
 {
 	t_error	err;
 
+	memset(sim, 0, sizeof(*sim));
 	sim->config = *config;
-	sim->start_time = 0;
-	sim->started = 0;
-	sim->stop = 0;
-	sim->completed = 0;
 	err = alloc_arrays(coders, dongles, config->number_of_coders);
 	if (err != SUCCESS)
 		return (err);
 	err = init_dongles(*dongles, config->number_of_coders);
-	if (err == SUCCESS)
-		err = init_sim_sync(sim);
+	if (err == SUCCESS
+		&& (pthread_mutex_init(&sim->log_lock, NULL) != 0
+			|| pthread_mutex_init(&sim->state_lock, NULL) != 0
+			|| pthread_cond_init(&sim->start_cond, NULL) != 0))
+		err = ERR_FATAL;
 	if (err != SUCCESS)
 	{
 		free(*coders);
@@ -86,4 +77,22 @@ t_error	init_sim(t_sim *sim, t_config *config,
 	}
 	init_coders(sim, *coders, *dongles);
 	return (SUCCESS);
+}
+
+void	destroy_sim(t_sim *sim, t_coder *coders, t_dongle *dongles)
+{
+	int	i;
+
+	i = sim->config.number_of_coders;
+	while (i > 0)
+	{
+		i--;
+		pthread_cond_destroy(&dongles[i].cond);
+		pthread_mutex_destroy(&dongles[i].lock);
+	}
+	pthread_cond_destroy(&sim->start_cond);
+	pthread_mutex_destroy(&sim->state_lock);
+	pthread_mutex_destroy(&sim->log_lock);
+	free(coders);
+	free(dongles);
 }

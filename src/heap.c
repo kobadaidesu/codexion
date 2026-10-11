@@ -30,6 +30,7 @@ static void	swap_slots(t_dongle *d, int a, int b)
 	d->wait_deadlines[b] = tmp;
 }
 
+/* 末尾に挿入し、親と比較しながら浮上(sift-up)させる */
 void	heap_push(t_dongle *d, int coder_id,
 	long long deadline, t_scheduler scheduler)
 {
@@ -59,6 +60,7 @@ int	heap_top_id(t_dongle *d)
 	return (d->wait_ids[0]);
 }
 
+/* 末尾要素を根に移し、子と比較しながら沈降(sift-down)させる */
 void	heap_pop(t_dongle *d, t_scheduler scheduler)
 {
 	int	index;
